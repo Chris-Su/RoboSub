@@ -1,6 +1,5 @@
 /*
 Implementation of the Controller_PID struct as defined by pid.h and its functions.
-
 This is used as data in pid.c
 */
 
@@ -20,7 +19,8 @@ void PID_Reset (Controller_PID* PID) {
 void PID_Update (Controller_PID* PID, double value) {
 // updates the controller with a single reading
     PID->P = value;
-    PID->I = (1-PID->Alpha)*PID->I + value;
+    //Left: accumulation of past terms with decay, Right: Riemann sum of current term (with delta time)
+    PID->I = (1-PID->Alpha)*PID->I + value/TIMER_RATE_IN_HZ;
     
     int i; 
     for (i = PID_NUM_OLD_VALUES-1; i > 0; i--)
@@ -32,7 +32,7 @@ void PID_Update (Controller_PID* PID, double value) {
     if (PID->num_values >= PID_NUM_OLD_VALUES-1) { // if enough values accumulated
         for (i = 1; i < PID_NUM_OLD_VALUES; i++)
             temp += PID->old_values[i-1] - PID->old_values[i];
-        PID->D = (float)temp / PID_NUM_OLD_VALUES;
+        PID->D = (float)temp / PID_NUM_OLD_VALUES * TIMER_RATE_IN_HZ; //average slope across several readings
     }
     else {
         PID->D = 0;
